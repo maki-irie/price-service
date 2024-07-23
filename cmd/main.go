@@ -1,19 +1,16 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
-	"time"
 
 	"github.com/chrisbrown1111/price-service/pkg/jwt"
-
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/chrisbrown1111/price-service/pkg/postgres"
 )
 
 // Define a struct that matches the JSON structure
@@ -27,38 +24,28 @@ type DiscountResponse struct {
 	Related_items      []string `json:"related_items"`
 }
 
-// Declare a global variable for the connection pool
-var pool *pgxpool.Pool
-
 func priceHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("priceHandler - starts")
 
 	jwtToken := r.URL.Query().Get("jwt")
 
-	//secretKey := []byte("UuMGMJMcRInbynNiyGX3zoz0YipAQyLmvn5efGo3wo4i9hf335Xh2TEbRpArlVxhRRly5G3Cgi1mLmQtVyogWuqy7xJfgB47iO2nXZbco0KDXX6SDDjSrpaWFFjmln7a")
 	secretKey, err := jwt.GetJwtKey()
 	if err != nil {
-		log.Fatal("priceHandler getJwtKey err: ", err)
+		log.Fatalf("priceHandler getJwtKey err: ", err)
 	}
 
-	//jwtToken := "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE3MjEzMDk5OTIsImV4cCI6MTc1Mjg0NTk5MiwiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIml0ZW0iOiJhcHBsZXMiLCJ2YXQtaW5jbCI6InRydWUiLCJxdWFudGl0eSI6IjEyNCJ9.RutoxPIxpGFUf62bU4rjY7Haq08Lydft1q0Vv58bOrU"
-	fmt.Println("jwt: ", jwtToken)
 	claims, err := jwt.ParseJWT(jwtToken, secretKey)
 	if err != nil {
-		fmt.Println("Error parsing JWT:", err)
-		return
+		log.Fatalf("Error parsing JWT:", err)
 	}
 
-	fmt.Printf("Claims: %#v\n", claims)
-
 	// Fetch the price from Postgres
-	price, err := fetchPrice(claims.Item)
+	price, err := postgres.FetchPrice(claims.Item)
 	if err != nil {
 		log.Fatal("fetchPrice", err)
 	}
 
 	if price != 0 {
-		fmt.Println("Fetched price:", price)
+		log.Println("Fetched price:", price)
 		discount, err := fetchDiscount(claims.Quantity)
 		if err != nil {
 			log.Fatal("Fetch Discount", err)
@@ -67,12 +54,12 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 		var totalPrice float32
 		quantity, err := strconv.Atoi(claims.Quantity)
 		if err != nil {
-			fmt.Printf("Error converting '%s' to bool: %v\n", claims.Quantity, err)
+			log.Printf("Error converting '%s' to bool: %v\n", claims.Quantity, err)
 		}
 		totalPrice = float32(price * quantity)
 		VatInclBool, err := strconv.ParseBool(claims.Vatincl)
 		if err != nil {
-			fmt.Printf("Error converting '%s' to bool: %v\n", claims.Vatincl, err)
+			log.Printf("Error converting '%s' to bool: %v\n", claims.Vatincl, err)
 		}
 
 		if VatInclBool {
@@ -82,42 +69,19 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 			totalPrice = totalPrice - totalPrice*discount.Discount/100
 		}
 
-		fmt.Printf("totalPrice: %.2f\n", totalPrice)
+		log.Printf("totalPrice: %.2f\n", totalPrice)
 
 		// Set the content type to application/json
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, "{\"quality\":%s,\"price\":%.2f }", claims.Quantity, totalPrice)
 		// Write the JSON response
-		//w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "{\"quality\":%s,\"price\":%.2f }", claims.Quantity, totalPrice)
 	} else {
-		fmt.Println("Item not found")
+		log.Println("Item not found")
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
-func fetchPrice(name string) (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Prepare the query
-	query := "SELECT price FROM item_table WHERE name = $1"
-
-	// Execute the query and scan the result into the Item struct
-	var price int
-	err := pool.QueryRow(ctx, query, name).Scan(&price)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			// No result found
-			return 0, nil
-		}
-		return 0, err
-	}
-
-	return price, nil
-}
-
 func fetchDiscount(quantity string) (DiscountResponse, error) {
-	fmt.Println("fetchDiscount() - quantity:", quantity)
 	// The URL of the HTTP server you want to call
 	baseUrl := "http://localhost:7070/discount"
 
@@ -144,48 +108,38 @@ func fetchDiscount(quantity string) (DiscountResponse, error) {
 	}
 
 	// Decode the JSON response directly into the struct
-	var discountResponse DiscountResponse
+	var discountResp DiscountResponse
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&discountResponse)
+	err = decoder.Decode(&discountResp)
 	if err != nil {
 		log.Fatalf("Error decoding JSON: %v\n", err)
 	}
 
 	// Print the unmarshalled data
-	fmt.Printf("Discount: %.2f\n", discountResponse.Discount)
-	fmt.Printf("Item: %s\n", discountResponse.Item)
-	fmt.Printf("Quantity: %d\n", discountResponse.Quantity)
-
-	return discountResponse, err
+	log.Printf("Item: %s Discount: %.2f Quantity: %d\n", discountResp.Item, discountResp.Discount, discountResp.Quantity)
+	return discountResp, err
 }
 
 func main() {
-	var err error
-	// Connection string
+	log.SetOutput(os.Stdout)
+	// Postgres connection string
 	connStr := "postgres://postgres:mysecretpassword@localhost:5432/postgres"
 
-	// Create a connection pool
-	config, err := pgxpool.ParseConfig(connStr)
+	err := postgres.Init(connStr)
 	if err != nil {
-		log.Fatalf("Unable to parse connection string: %v\n", err)
+		log.Printf("Error initializing database: %v", err)
+		return
 	}
-	config.MaxConns = 10
-	pool, err = pgxpool.ConnectConfig(context.Background(), config)
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer pool.Close()
-
-	fmt.Println("Connected to the database!")
+	defer postgres.CloseDB()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/price", priceHandler)
 
-	fmt.Println("Starting the HTTP server on :8081")
+	log.Println("Starting the HTTP server on :8081")
 
 	// Start the HTTP server
 	if err := http.ListenAndServe("localhost:8081", mux); err != nil && err != http.ErrServerClosed {
-		fmt.Printf("Could not listen on 8081: %v\n", err)
+		log.Fatalf("Could not listen on 8081: %v\n", err)
 	}
 
 }

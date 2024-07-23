@@ -50,9 +50,6 @@ func GetJwtKey() ([]byte, error) {
 	if err != nil {
 		log.Fatalf("Error unmarshaling JSON: %v", err)
 	}
-
-	// Print the parsed response
-	fmt.Printf("Parsed response: %+v\n", apiResponse)
 	return []byte(apiResponse.Pkey), err
 }
 
