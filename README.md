@@ -40,6 +40,6 @@ Thoughts:
 5. Just use go http handler for request and call other services via go routine, as seems to be synchronous steps
 
 # Setting up postgres
-docker pull postgres
-docker run --name my-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres
-docker exec -it my-postgres psql -U postgres
+> docker pull postgres
+> docker run --name postgres -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
+> docker exec -it my-postgres psql -U postgres
