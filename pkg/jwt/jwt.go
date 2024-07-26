@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -24,7 +25,11 @@ type ApiResponse struct {
 
 func GetJwtKey() ([]byte, error) {
 	// Define the URL of the API endpoint
-	url := "http://localhost:7070/pkey"
+	url := os.Getenv("REMOTE_SERVER")
+	if len(url) == 0 {
+		url = "http://localhost:7070"
+	}
+	url = url + "/pkey"
 
 	// Perform the GET request
 	response, err := http.Get(url)

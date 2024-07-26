@@ -72,7 +72,11 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 
 func fetchDiscount(quantity int) (DiscountResponse, error) {
 	// The URL of the HTTP server you want to call
-	baseUrl := "http://localhost:7070/discount"
+	baseUrl := os.Getenv("REMOTE_SERVER")
+	if len(baseUrl) == 0 {
+		baseUrl = "http://localhost:7070"
+	}
+	baseUrl = baseUrl + "/discount"
 
 	// Create a URL object
 	u, err := url.Parse(baseUrl)
@@ -112,8 +116,10 @@ func fetchDiscount(quantity int) (DiscountResponse, error) {
 func main() {
 	log.SetOutput(os.Stdout)
 	// Postgres connection string
-	connStr := "postgres://postgres:mysecretpassword@localhost:5432/test_db"
-
+	connStr := os.Getenv("DB_IP")
+	if len(connStr) == 0 {
+		connStr = "postgres://postgres:mysecretpassword@localhost:5432/test_db"
+	}
 	err := postgres.Init(connStr)
 	if err != nil {
 		log.Fatalf("Error initializing database: %v", err)
