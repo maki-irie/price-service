@@ -47,7 +47,7 @@ func FetchPrice(name string) (int, error) {
 	defer cancel()
 
 	// Prepare the query
-	query := "SELECT price FROM item_table WHERE name = $1"
+	query := "SELECT price FROM items_table WHERE name = $1"
 
 	// Execute the query and scan the result into the Item struct
 	var price int
