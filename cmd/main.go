@@ -35,7 +35,8 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 
 	claims, err := jwt.ParseJWT(jwtToken, secretKey)
 	if err != nil {
-		log.Fatalf("Error parsing JWT:", err)
+		log.Printf("Error parsing JWT:", err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	// Fetch the price from Postgres
@@ -45,31 +46,19 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if price >= 0 {
-		log.Println("Fetched price:", price)
+		//log.Println("Fetched price:", price)
 		discount, err := fetchDiscount(claims.Quantity)
 		if err != nil {
 			log.Fatal("Fetch Discount", err)
 		}
 
 		var totalPrice float32
-		quantity := claims.Quantity
-		if err != nil {
-			log.Printf("Error converting '%s' to bool: %v\n", claims.Quantity, err)
-		}
-		totalPrice = float32(price * quantity)
-		VatInclBool := claims.Vatincl
-		if err != nil {
-			log.Printf("Error converting '%s' to bool: %v\n", claims.Vatincl, err)
-		}
+		var discountedPrice float32 = float32(price) - float32(price)*(discount.Discount)/float32(100)
+		totalPrice = discountedPrice * float32(claims.Quantity)
 
-		if VatInclBool {
-			totalPrice = totalPrice * 1.2 * float32(quantity)
+		if claims.Vatincl {
+			totalPrice = totalPrice * 1.2
 		}
-		if discount.Discount > 0.0 {
-			totalPrice = totalPrice - totalPrice*discount.Discount/100
-		}
-
-		log.Printf("totalPrice: %.2f\n", totalPrice)
 
 		// Set the content type to application/json
 		w.Header().Set("Content-Type", "application/json")
@@ -116,7 +105,7 @@ func fetchDiscount(quantity int) (DiscountResponse, error) {
 	}
 
 	// Print the unmarshalled data
-	log.Printf("Item: %s Discount: %.2f Quantity: %d\n", discountResp.Item, discountResp.Discount, discountResp.Quantity)
+	// log.Printf("Item: %s Discount: %.2f Quantity: %d\n", discountResp.Item, discountResp.Discount, discountResp.Quantity)
 	return discountResp, err
 }
 
@@ -127,19 +116,18 @@ func main() {
 
 	err := postgres.Init(connStr)
 	if err != nil {
-		log.Printf("Error initializing database: %v", err)
-		return
+		log.Fatalf("Error initializing database: %v", err)
 	}
 	defer postgres.CloseDB()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/price", priceHandler)
 
-	log.Println("Starting the HTTP server on :8081")
+	log.Println("Starting the HTTP server on :8080")
 
 	// Start the HTTP server
-	if err := http.ListenAndServe("localhost:8081", mux); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("Could not listen on 8081: %v\n", err)
+	if err := http.ListenAndServe("localhost:8080", mux); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Could not listen on 8080: %v\n", err)
 	}
 
 }

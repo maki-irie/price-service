@@ -13,7 +13,7 @@ import (
 type MyClaims struct {
 	jwt.StandardClaims
 	Item     string `json:"item"`
-	Vatincl  bool   `json:"vat-incl"`
+	Vatincl  bool   `json:"vat_incl"`
 	Quantity int    `json:"quantity"`
 }
 
@@ -69,6 +69,5 @@ func ParseJWT(tokenString string, secretKey []byte) (*MyClaims, error) {
 	if !token.Valid {
 		return nil, fmt.Errorf("invalid token")
 	}
-
 	return claims, nil
 }
