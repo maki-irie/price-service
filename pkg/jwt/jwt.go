@@ -13,8 +13,8 @@ import (
 type MyClaims struct {
 	jwt.StandardClaims
 	Item     string `json:"item"`
-	Vatincl  string `json:"vat-incl"`
-	Quantity string `json:"quantity"`
+	Vatincl  bool   `json:"vat-incl"`
+	Quantity int    `json:"quantity"`
 }
 
 type ApiResponse struct {

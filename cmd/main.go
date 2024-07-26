@@ -20,7 +20,7 @@ type DiscountResponse struct {
 	Quantity           int      `json:"quantity"`
 	Applicable_in_eu   bool     `json:"applicable_in_eu"`
 	Shipping_cost      float32  `json:"shipping_cost"`
-	Shipping_time_days int      `json:"shipping_time_days:`
+	Shipping_time_days int      `json:"shipping_time_days"`
 	Related_items      []string `json:"related_items"`
 }
 
@@ -44,7 +44,7 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal("fetchPrice", err)
 	}
 
-	if price != 0 {
+	if price >= 0 {
 		log.Println("Fetched price:", price)
 		discount, err := fetchDiscount(claims.Quantity)
 		if err != nil {
@@ -52,12 +52,12 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var totalPrice float32
-		quantity, err := strconv.Atoi(claims.Quantity)
+		quantity := claims.Quantity
 		if err != nil {
 			log.Printf("Error converting '%s' to bool: %v\n", claims.Quantity, err)
 		}
 		totalPrice = float32(price * quantity)
-		VatInclBool, err := strconv.ParseBool(claims.Vatincl)
+		VatInclBool := claims.Vatincl
 		if err != nil {
 			log.Printf("Error converting '%s' to bool: %v\n", claims.Vatincl, err)
 		}
@@ -74,14 +74,14 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to application/json
 		w.Header().Set("Content-Type", "application/json")
 		// Write the JSON response
-		fmt.Fprintf(w, "{\"quality\":%s,\"price\":%.2f }", claims.Quantity, totalPrice)
+		fmt.Fprintf(w, "{\"quality\":%d,\"tot_price\":%.2f }", claims.Quantity, totalPrice)
 	} else {
-		log.Println("Item not found")
+		log.Println("Price < 0!")
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
-func fetchDiscount(quantity string) (DiscountResponse, error) {
+func fetchDiscount(quantity int) (DiscountResponse, error) {
 	// The URL of the HTTP server you want to call
 	baseUrl := "http://localhost:7070/discount"
 
@@ -92,7 +92,7 @@ func fetchDiscount(quantity string) (DiscountResponse, error) {
 	}
 
 	query := u.Query()
-	query.Set("quantity", quantity)
+	query.Set("quantity", strconv.Itoa(quantity))
 	u.RawQuery = query.Encode()
 
 	// Make the GET request
@@ -123,7 +123,7 @@ func fetchDiscount(quantity string) (DiscountResponse, error) {
 func main() {
 	log.SetOutput(os.Stdout)
 	// Postgres connection string
-	connStr := "postgres://postgres:mysecretpassword@localhost:5432/postgres"
+	connStr := "postgres://postgres:mysecretpassword@localhost:5432/test_db"
 
 	err := postgres.Init(connStr)
 	if err != nil {
@@ -133,7 +133,7 @@ func main() {
 	defer postgres.CloseDB()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/price", priceHandler)
+	mux.HandleFunc("/api/price", priceHandler)
 
 	log.Println("Starting the HTTP server on :8081")
 
