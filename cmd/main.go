@@ -9,6 +9,8 @@ import (
 	"os"
 	"strconv"
 
+	"go.uber.org/automaxprocs/maxprocs"
+
 	"github.com/chrisbrown1111/price-service/pkg/jwt"
 	"github.com/chrisbrown1111/price-service/pkg/postgres"
 )
@@ -113,14 +115,21 @@ func fetchDiscount(quantity int) (DiscountResponse, error) {
 	return discountResp, err
 }
 
-func main() {
+func run() error {
+	var err error
 	log.SetOutput(os.Stdout)
+
+	_, err = maxprocs.Set(maxprocs.Logger(log.Printf))
+	if err != nil {
+		return err
+	}
+
 	// Postgres connection string
 	connStr := os.Getenv("DB_IP")
 	if len(connStr) == 0 {
 		connStr = "postgres://postgres:mysecretpassword@localhost:5432/test_db"
 	}
-	err := postgres.Init(connStr)
+	err = postgres.Init(connStr)
 	if err != nil {
 		log.Fatalf("Error initializing database: %v", err)
 	}
@@ -136,4 +145,11 @@ func main() {
 		log.Fatalf("Could not listen on 8080: %v\n", err)
 	}
 
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatalf("Application error: %v", err)
+	}
 }
