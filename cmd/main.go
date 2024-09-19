@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 
 	"go.uber.org/automaxprocs/maxprocs"
 
@@ -32,31 +33,34 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 
 	secretKey, err := jwt.GetJwtKey()
 	if err != nil {
-		log.Fatalf("priceHandler getJwtKey err: ", err)
+		log.Fatalf("priceHandler getJwtKey err: %v", err)
 	}
 
 	claims, err := jwt.ParseJWT(jwtToken, secretKey)
 	if err != nil {
-		log.Printf("Error parsing JWT:", err)
+		log.Printf("Error parsing JWT: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	// Fetch the price from Postgres
 	price, err := postgres.FetchPrice(claims.Item)
 	if err != nil {
-		log.Fatal("fetchPrice", err)
+		log.Printf("fetchPrice %v", err)
+		return
 	}
 
 	if price >= 0 {
-		//log.Println("Fetched price:", price)
+
 		discount, err := fetchDiscount(claims.Quantity)
 		if err != nil {
-			log.Fatal("Fetch Discount", err)
+			log.Printf("Fetch Discount %v", err)
+			return
 		}
 
 		var totalPrice float32
 		var discountedPrice float32 = float32(price) - float32(price)*(discount.Discount)/float32(100)
-		totalPrice = discountedPrice * float32(claims.Quantity)
+		totalPrice = float32(discountedPrice * float32(claims.Quantity))
 
 		if claims.Vatincl {
 			totalPrice = totalPrice * 1.2
@@ -66,6 +70,7 @@ func priceHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		// Write the JSON response
 		fmt.Fprintf(w, "{\"quality\":%d,\"tot_price\":%.2f }", claims.Quantity, totalPrice)
+		fmt.Println("Request done")
 	} else {
 		log.Println("Price < 0!")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -93,7 +98,8 @@ func fetchDiscount(quantity int) (DiscountResponse, error) {
 	// Make the GET request
 	resp, err := http.Get(u.String())
 	if err != nil {
-		log.Fatalf("Error making GET request: %v\n", err)
+		log.Printf("Error making GET request: %v", err)
+		return DiscountResponse{}, err
 	}
 	defer resp.Body.Close()
 
@@ -129,6 +135,8 @@ func run() error {
 	if len(connStr) == 0 {
 		connStr = "postgres://postgres:mysecretpassword@localhost:5432/test_db"
 	}
+	// give postgres the time to start when using docker compose
+	time.Sleep(5 * time.Second)
 	err = postgres.Init(connStr)
 	if err != nil {
 		log.Fatalf("Error initializing database: %v", err)
@@ -141,7 +149,7 @@ func run() error {
 	log.Println("Starting the HTTP server on :8080")
 
 	// Start the HTTP server
-	if err := http.ListenAndServe("localhost:8080", mux); err != nil && err != http.ErrServerClosed {
+	if err := http.ListenAndServe("0.0.0.0:8080", mux); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Could not listen on 8080: %v\n", err)
 	}
 

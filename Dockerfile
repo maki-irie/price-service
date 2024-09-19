@@ -16,8 +16,9 @@ FROM redhat/ubi9-micro:latest
 COPY --from=BLD /src/price-service/price-service /appl/
 
 EXPOSE 8080
-ENV REMOTE_SERVER=http://127.0.0.1:7070/
-ENV DB_IP=http://127.0.0.1:5432
+
+ENV REMOTE_SERVER=http://127.0.0.1:7070
+ENV DB_IP="postgres://postgres:mysecretpassword@postgres-container:5432/test_db"
 
 WORKDIR /appl/
 CMD ["./price-service"]

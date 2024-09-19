@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  testservice:
+    image: test-service:latest
+    container_name: test-service
+    ports:
+      - "7070:7070"
+    networks:
+      - mynetwork
+
+  postgres:
+    image: renzocherin/postgres-and-test-data:v2
+    container_name: postgres-container
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "5432:5432"
+    networks:
+      - mynetwork
+
+  price-service:
+      image: price-service:latest  # Use the latest version of the price-service image
+      container_name: price-service  # Name the container "price-service"
+      environment:
+        REMOTE_SERVER: http://test-service:7070/  # Set the REMOTE_SERVER environment variable to the test-service URL
+        DB_IP: postgres://postgres:mysecretpassword@postgres-container:5432/test_db  # Set the DB_IP environment variable to the PostgreSQL connection string
+      ports:
+        - "8080:8080"  # Map port 8080 of the container to port 8080 on the host
+      networks:
+        - mynetwork  # Connect the container to the "mynetwork" network
+      depends_on:
+        - postgres  # Ensure the postgres service is started before this service
+
+# to bring up Postgres client tool
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   ports:
+  #     - "8081:80"
+  #   networks:
+  #     - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge

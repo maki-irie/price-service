@@ -1,5 +1,23 @@
 # price-service
 
+## Setting Up the Load Testing
+
+### Setting Up Docker Compose
+Docker build testservice and price-service images
+> docker build -t price-service .
+> docker build -t testservice
+#### NB. Make sure you use the image names above so Docker Compose can find in your local Docker Desktop image repo
+
+### Run docker compose
+> docker-compose up -d
+
+### Install K6 (on Mac)
+> brew install k6
+
+### Run K6 Load Test
+> k6 k6_load_test.js
+
+
 ## Requirements
 Develop a REST service with one HTTP GET resource API as:
 HTTP GET <base-IP>/price?jwt="7394ytuh.473tirg.489th"
@@ -39,9 +57,4 @@ Thoughts:
 4. If DB and discount API are independent we could make use of go routines and channels, parallel run them
 5. Just use go http handler for request and call other services via go routine, as seems to be synchronous steps
 
-# Setting up postgres
-> docker pull postgres
 
-> docker run --name postgres -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
-
-> docker exec -it my-postgres psql -U postgres

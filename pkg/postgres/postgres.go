@@ -22,7 +22,7 @@ func Init(connStr string) error {
 		log.Printf("Unable to parse connection string: %v\n", err)
 		return err
 	}
-	config.MaxConns = 10
+	config.MaxConns = 20
 	pool, err = pgxpool.ConnectConfig(context.Background(), config)
 	if err != nil {
 		log.Printf("Unable to connect to database: %v\n", err)
