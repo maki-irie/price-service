@@ -1,24 +1,14 @@
-FROM redhat/ubi9:latest AS BLD
+FROM registry.access.redhat.com/ubi9/go-toolset:latest AS build
 
-RUN yum -y install go
-
-RUN mkdir -p /src/price-service
-WORKDIR /src/price-service
+WORKDIR /opt/app-root/src
 COPY . .
 
-ENV GOOS=linux
-ENV GOARCH=amd64
-
-RUN go build -ldflags="-s -w" -o price-service cmd/main.go
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -ldflags="-s -w" -o /opt/app-root/src/price-service cmd/main.go
 
 FROM redhat/ubi9-micro:latest
 
-COPY --from=BLD /src/price-service/price-service /appl/
+COPY --from=build /opt/app-root/src/price-service /usr/bin/price-service
 
-EXPOSE 8080
-
-ENV REMOTE_SERVER=http://127.0.0.1:7070
-ENV DB_IP="postgres://postgres:mysecretpassword@postgres-container:5432/test_db"
-
-WORKDIR /appl/
-CMD ["./price-service"]
+CMD ["/usr/bin/price-service"]

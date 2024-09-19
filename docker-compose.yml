@@ -1,6 +1,21 @@
-version: '3.8'
-
 services:
+  price-service:
+    container_name: price-service  # Name the container "price-service"
+    environment:
+      REMOTE_SERVER: http://test-service:7070/  # Set the REMOTE_SERVER environment variable to the test-service URL
+      DB_IP: postgres://postgres:mysecretpassword@postgres-container:5432/test_db  # Set the DB_IP environment variable to the PostgreSQL connection string
+    ports:
+      - "8080:8080"  # Map port 8080 of the container to port 8080 on the host
+    networks:
+      - mynetwork  # Connect the container to the "mynetwork" network
+    build: .
+    depends_on:
+        # Ensure the postgres service is started before this service
+      postgres:  
+        condition: service_healthy
+      testservice:
+        condition: service_started
+  
   testservice:
     image: test-service:latest
     container_name: test-service
@@ -18,19 +33,14 @@ services:
       - "5432:5432"
     networks:
       - mynetwork
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 1s
+      retries: 15
+      start_period: 20s
+      timeout: 1s
 
-  price-service:
-      image: price-service:latest  # Use the latest version of the price-service image
-      container_name: price-service  # Name the container "price-service"
-      environment:
-        REMOTE_SERVER: http://test-service:7070/  # Set the REMOTE_SERVER environment variable to the test-service URL
-        DB_IP: postgres://postgres:mysecretpassword@postgres-container:5432/test_db  # Set the DB_IP environment variable to the PostgreSQL connection string
-      ports:
-        - "8080:8080"  # Map port 8080 of the container to port 8080 on the host
-      networks:
-        - mynetwork  # Connect the container to the "mynetwork" network
-      depends_on:
-        - postgres  # Ensure the postgres service is started before this service
+ 
 
 # to bring up Postgres client tool
   # pgadmin:
