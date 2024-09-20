@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/jackc/pgx"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Declare a global variable for the connection pool
@@ -23,7 +23,7 @@ func Init(connStr string) error {
 		return err
 	}
 	config.MaxConns = 20
-	pool, err = pgxpool.ConnectConfig(context.Background(), config)
+	pool, err = pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		log.Printf("Unable to connect to database: %v\n", err)
 		return err
