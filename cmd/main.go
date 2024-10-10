@@ -30,7 +30,7 @@ func newPriceHandler() (http.HandlerFunc, error) {
 			log.Print(err)
 		}
 		defer r.Body.Close()
-
+		fmt.Println("sending request")
 		jwtToken := r.URL.Query().Get("jwt")
 
 		claims, err := dsClient.ParseJWT(jwtToken)
@@ -65,6 +65,7 @@ func newPriceHandler() (http.HandlerFunc, error) {
 			w.Header().Set("Content-Type", "application/json")
 
 			// Write the JSON response
+
 			_, err = w.Write(
 				[]byte(
 					fmt.Sprintf(`{\"quality\":%d,\"tot_price\":%.2f }`, claims.Quantity, totalPrice),

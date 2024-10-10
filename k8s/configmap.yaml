@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myapp-config
+  namespace: myapp
+data:
+  REMOTE_SERVER: "http://test-service:7070/"
+  # DB_IP: "postgres://postgres:mysecretpassword@postgres-service:5432/test_db"

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: myapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: gcr.io/vocal-exchanger-437315-f8/postgres-and-test-data:v2
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 250m
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          value: mysecretpassword
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: myapp
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

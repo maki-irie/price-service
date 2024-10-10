@@ -40,7 +40,7 @@ const jwts=[
   "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpdGVtIjoiQU1EIFJ5emVuIDcgNjQzOVgiLCJ2YXRfaW5jbCI6ZmFsc2UsInF1YW50aXR5Ijo1fQ.0umodDqKAx839AyrSVxcEh9G5xfF5S96QEjWtFlH6YUt2Dh6lMqmpGsqR-nOdX0SSzemxxmyHQQR1Frbx890bQ",
 ];
 
-let target_ip='127.0.0.1:8080'
+let target_ip = __ENV.TARGET_IP || '127.0.0.1:8080';
 
 export default function () {
   http.get('http://'+target_ip+'/api/price?jwt='+jwts[Math.floor(Math.random() * 3)]);

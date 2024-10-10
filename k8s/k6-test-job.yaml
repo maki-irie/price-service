@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-load-test
+  namespace: myapp
+spec:
+  template:
+    metadata:
+      name: k6-load-test
+    spec:
+      containers:
+      - name: k6
+        image:  gcr.io/vocal-exchanger-437315-f8/k6-load-test:v1
+        resources:
+          requests:
+            cpu: 250m
+        env:
+        - name: TARGET_IP
+          value: "price-service:8080"
+          # value: "quarkus-jvm:8081"
+      restartPolicy: Never
+  backoffLimit: 1

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: price-service
+  namespace: myapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: price-service
+  template:
+    metadata:
+      labels:
+        app: price-service
+    spec:
+      containers:
+      - name: price-service
+        image: gcr.io/vocal-exchanger-437315-f8/price-service:v1
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_IP
+          value: "postgres://postgres:mysecretpassword@postgres-service:5432/test_db"
+        envFrom:
+        - configMapRef:
+            name: myapp-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: price-service
+  namespace: myapp
+spec:
+  selector:
+    app: price-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

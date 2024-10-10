@@ -4,7 +4,7 @@
 
 ### Setting Up Docker Compose
 Docker build testservice and price-service images
-> docker build -t price-service .
+> docker build -t price-service .   
 > docker build -t testservice .
 #### NB. Make sure you use the image names above so Docker Compose can find in your local Docker Desktop image repo
 
