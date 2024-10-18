@@ -21,10 +21,10 @@ export const options = {
         { target: 50, duration: '3m' },
 
         // Linearly ramp-up to 400 iterations per `timeUnit` over the following two minutes.
-        { target: 400, duration: '2m' },
+        { target: __ENV.TARGET_RATE || 400, duration: '2m' },
 
         // Keep 400 tps for 5 min
-        { target: 400, duration: '5m' },
+        { target: __ENV.TARGET_RATE || 400, duration: '5m' },
 
         // Linearly ramp-down to starting 50 iterations per `timeUnit` over the last two minutes.
         { target: 50, duration: '2m' },
