@@ -18,5 +18,7 @@ spec:
         - name: TARGET_IP
           value: "price-service:8080"
           # value: "quarkus-jvm:8081"
+        - name: TARGET_RATE
+          value: "300"
       restartPolicy: Never
   backoffLimit: 1

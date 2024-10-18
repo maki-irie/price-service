@@ -13,14 +13,16 @@ spec:
       labels:
         app: price-service
     spec:
+      nodeSelector:
+        cloud.google.com/compute-class: "Balanced"
       containers:
       - name: price-service
         image: gcr.io/vocal-exchanger-437315-f8/price-service:v1
         resources:
           requests:
-            cpu: 250m
+            cpu: 5500m
           limits:
-            cpu: 500m
+            cpu: 5500m
         ports:
         - containerPort: 8080
         env:

@@ -18,7 +18,7 @@ spec:
         image: gcr.io/vocal-exchanger-437315-f8/postgres-and-test-data:v2
         resources:
           requests:
-            cpu: 250m
+            cpu: 200m
           limits:
             cpu: 250m
         ports:

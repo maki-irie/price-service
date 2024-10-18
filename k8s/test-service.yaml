@@ -18,9 +18,9 @@ spec:
         image: gcr.io/vocal-exchanger-437315-f8/test-service:v1
         resources:
           requests:
-            cpu: 200m
+            cpu: 100m
           limits:
-            cpu: 400m
+            cpu: 300m
         ports:
         - containerPort: 7070
 ---
