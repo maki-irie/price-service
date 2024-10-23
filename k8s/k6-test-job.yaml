@@ -2,12 +2,14 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: k6-load-test
-  namespace: myapp
+  namespace: my-namespace
 spec:
   template:
     metadata:
       name: k6-load-test
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: gke-cluster-1-default-pool-7e45d92c-rq18 
       containers:
       - name: k6
         image:  gcr.io/vocal-exchanger-437315-f8/k6-load-test:v1

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: price-service
-  namespace: myapp
+  namespace: my-namespace
 spec:
   replicas: 1
   selector:
@@ -14,7 +14,8 @@ spec:
         app: price-service
     spec:
       nodeSelector:
-        cloud.google.com/compute-class: "Balanced"
+        # cloud.google.com/compute-class: "Balanced"
+        kubernetes.io/hostname: gke-cluster-1-default-pool-7e45d92c-4cds
       containers:
       - name: price-service
         image: gcr.io/vocal-exchanger-437315-f8/price-service:v1
@@ -30,13 +31,13 @@ spec:
           value: "postgres://postgres:mysecretpassword@postgres-service:5432/test_db"
         envFrom:
         - configMapRef:
-            name: myapp-config
+            name: my-namespace-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: price-service
-  namespace: myapp
+  namespace: my-namespace
 spec:
   selector:
     app: price-service

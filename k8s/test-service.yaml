@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: test-service
-  namespace: myapp
+  namespace: my-namespace
 spec:
   replicas: 1
   selector:
@@ -13,6 +13,8 @@ spec:
       labels:
         app: test-service
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: gke-cluster-1-default-pool-7e45d92c-bqp7       
       containers:
       - name: test-service
         image: gcr.io/vocal-exchanger-437315-f8/test-service:v1
@@ -28,7 +30,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: test-service
-  namespace: myapp
+  namespace: my-namespace
 spec:
   selector:
     app: test-service
